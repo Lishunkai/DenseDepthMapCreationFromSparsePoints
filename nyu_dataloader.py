@@ -114,7 +114,7 @@ def rgb2grayscale(rgb):
 to_tensor = transforms.ToTensor()
 
 class NYUDataset(data.Dataset):
-    modality_names = ['rgb', 'rgbd', 'd'] # , 'g', 'gd'
+    modality_names = ['rgb', 'rgbd', 'd']
 
     def __init__(self, root, type, modality='rgb', num_samples=0, loader=h5_loader):
         classes, class_to_idx = find_classes(root)
