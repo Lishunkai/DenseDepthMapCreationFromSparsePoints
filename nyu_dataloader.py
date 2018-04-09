@@ -136,7 +136,7 @@ class NYUDataset(data.Dataset):
                                 "Supported dataset types are: train, val"))
         self.loader = loader
 
-        if modality in self.modality_names:
+        if modality in self.modality_names: # 如果在...中有...
             self.modality = modality
             if modality in ['rgbd', 'd', 'gd']:
                 if num_samples <= 0:
