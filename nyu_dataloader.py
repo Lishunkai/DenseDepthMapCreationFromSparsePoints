@@ -157,16 +157,16 @@ class NYUDataset(data.Dataset):
         return sparse_depth
 
       
-    img1 = cv2.imread('test1.png')  
+    # img1 = cv2.imread('test1.png')  
  
-    orb = cv2.ORB_create(5000)  
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # orb = cv2.ORB_create(5000)  
+    # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
   
-    kp = orb.detectAndCompute(img1,None)
-    kp = orb.detect(gray, None)
-	print len(kp)
+    # kp = orb.detectAndCompute(img1,None)
+    # kp = orb.detect(gray, None)
+	# print len(kp)
 
-	img2 = cv2.drawKeypoints(gray, kp, (255,0,0), 1)
+	# img2 = cv2.drawKeypoints(gray, kp, (255,0,0), 1)
 
 
 
