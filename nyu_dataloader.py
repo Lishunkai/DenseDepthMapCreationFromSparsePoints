@@ -150,8 +150,8 @@ class NYUDataset(data.Dataset):
 
 	# 生成稀疏深度图	
     def create_sparse_depth(self, depth, num_samples):
-        prob = float(num_samples) / depth.size
-        mask_keep = np.random.uniform(0, 1, depth.shape) < prob
+        prob = float(num_samples) / depth.size # 概率
+        mask_keep = np.random.uniform(0, 1, depth.shape) < prob # 生成一个0-1的mask，0-1是随机产生的，0-1产生的概率小于预设的概率
         sparse_depth = np.zeros(depth.shape)
         sparse_depth[mask_keep] = depth[mask_keep]
         return sparse_depth
