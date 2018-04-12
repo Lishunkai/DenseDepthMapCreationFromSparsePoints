@@ -148,29 +148,27 @@ class NYUDataset(data.Dataset):
             raise (RuntimeError("Invalid modality type: " + modality + "\n"
                                 "Supported dataset types are: " + ''.join(self.modality_names)))
 
-	# 生成稀疏深度图	
+	# 生成稀疏深度图 原版
     def create_sparse_depth(self, depth, num_samples):
         prob = float(num_samples) / depth.size # 概率
         mask_keep = np.random.uniform(0, 1, depth.shape) < prob # 生成一个0-1的mask，0-1是随机产生的，0-1产生的概率小于预设的概率
         sparse_depth = np.zeros(depth.shape)
-        sparse_depth[mask_keep] = depth[mask_keep]
+        sparse_depth[mask_keep] = depth[mask_keep] # 把深度图中和mask_keep对应的元素赋值给sparse_depth中的对应元素
         return sparse_depth
 
-      
-    # img1 = cv2.imread('test1.png')  
- 
-    # orb = cv2.ORB_create(5000)  
-    # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-  
-    # kp = orb.detectAndCompute(img1,None)
-    # kp = orb.detect(gray, None)
-	# print len(kp)
+	# 生成稀疏深度图 ORB特征提取
+    def create_sparse_depth_ORB(self, rgb, depth, prob):
+        num_samples = int(prob * depth.size)
+        gray = rgb2grayscale(rgb)
+        orb = cv2.ORB_create(num_samples)
+        kp = orb.detectAndCompute(gray, None)
+        print len(kp)
+        # img2 = cv2.drawKeypoints(gray, kp, (255,0,0), 1)
 
-	# img2 = cv2.drawKeypoints(gray, kp, (255,0,0), 1)
-
-
-
-
+        mask_keep = np.random.uniform(0, 1, depth.shape) < prob # 生成一个0-1的mask，0-1是随机产生的，0-1产生的概率小于预设的概率
+        sparse_depth = np.zeros(depth.shape)
+        sparse_depth[mask_keep] = depth[mask_keep] # 把深度图中和mask_keep对应的元素赋值给sparse_depth中的对应元素
+        return sparse_depth
 
 
 
