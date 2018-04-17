@@ -5,6 +5,7 @@ import numpy as np
 import torch.utils.data as data
 import h5py # HDF5的python版本
 import transforms
+from PIL import Image
 
 IMG_EXTENSIONS = [
     '.h5',
@@ -110,6 +111,13 @@ def val_transform(rgb, depth):
 def rgb2grayscale(rgb):
     return rgb[:,:,0] * 0.2989 + rgb[:,:,1] * 0.587 + rgb[:,:,2] * 0.114
 
+# 仅限RGB图像
+def MatrixTocvMat(data):
+    data = data*255
+    im = Image.fromarray(data.astype(np.uint8))
+    new_im = cv2.cvtColor(np.asarray(im),cv2.COLOR_RGB2BGR)  
+    return new_im
+
 
 to_tensor = transforms.ToTensor()
 
@@ -156,30 +164,38 @@ class NYUDataset(data.Dataset):
         sparse_depth[mask_keep] = depth[mask_keep] # 把深度图中和mask_keep对应的元素赋值给sparse_depth中的对应元素
         return sparse_depth
 
-	# # 生成稀疏深度图 ORB特征提取
-    # def create_sparse_depth_ORB(self, rgb, depth, prob):
-    #     num_samples = int(prob * depth.size)
-    #     gray = rgb2grayscale(rgb)
-    #     orb = cv2.ORB_create(num_samples)
-    #     kp = orb.detect(gray, None)
-    #     print len(kp)
-    #     # img2 = cv2.drawKeypoints(gray, kp, (255,0,0), 1)
+    # 生成稀疏深度图 ORB特征提取
+    def create_sparse_depth_ORB(self, rgb_np, depth, num_samples):
+        # num_samples = int(prob * depth.size)
+        rgb = MatrixTocvMat(rgb_np)
+        gray = cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY)
+        orb = cv2.ORB_create(num_samples) # 这里没有网格化
+        kp = orb.detect(gray, None)
+        print("number of ORB KeyPoints:", len(kp))
 
-    #     mask_keep = np.random.uniform(0, 1, depth.shape) < prob # 生成一个0-1的mask，0-1是随机产生的，0-1产生的概率小于预设的概率
-    #     sparse_depth = np.zeros(depth.shape)
-    #     sparse_depth[mask_keep] = depth[mask_keep] # 把深度图中和mask_keep对应的元素赋值给sparse_depth中的对应元素
-    #     return sparse_depth
+        # print(len(kp)) # keypoint的个数
+        # print(kp[0]) # 多少个角点，就有多少个下标
+        # tu = kp[0].pt   #（提取坐标） pt指的是元组 tuple(x,y)
+        # print(tu[0],tu[1]) # 输出第一个keypoint的x,y坐标
 
-
-
-
+        sparse_depth = np.zeros(depth.shape)
+        for i in range(len(kp)):
+            tu = kp[i].pt
+            x = int(tu[0])
+            y = int(tu[1])
+            sparse_depth[y,x] = depth[y,x] # x,y和行,列的顺序不一样
+        
+        return sparse_depth
 
     def create_rgbd(self, rgb, depth, num_samples):
-        sparse_depth = self.create_sparse_depth(depth, num_samples)
+        sparse_depth = self.create_sparse_depth_ORB(rgb, depth, num_samples)
+        # sparse_depth = self.create_sparse_depth(depth, num_samples)
+        
         # rgbd = np.dstack((rgb[:,:,0], rgb[:,:,1], rgb[:,:,2], sparse_depth))
-        rgbd = np.append(rgb, np.expand_dims(sparse_depth, axis=2), axis=2)
+        rgbd = np.append(rgb, np.expand_dims(sparse_depth, axis=2), axis=2) # append()相当于push_back()
         return rgbd
 
+    # 获取原始图像
     def __getraw__(self, index):
         """
         Args:
@@ -189,7 +205,7 @@ class NYUDataset(data.Dataset):
             tuple: (rgb, depth) the raw data.
         """
         path, target = self.imgs[index]
-        rgb, depth = self.loader(path)
+        rgb, depth = self.loader(path) # 这个loader就是h5_loader
         return rgb, depth
 
     def __get_all_item__(self, index):
@@ -202,7 +218,7 @@ class NYUDataset(data.Dataset):
         """
         rgb, depth = self.__getraw__(index)
         if self.transform is not None:
-            rgb_np, depth_np = self.transform(rgb, depth)
+            rgb_np, depth_np = self.transform(rgb, depth) # 经过数据增强步骤后的结果
         else:
             raise(RuntimeError("transform not defined"))
 
@@ -215,7 +231,8 @@ class NYUDataset(data.Dataset):
         elif self.modality == 'rgbd':
             input_np = self.create_rgbd(rgb_np, depth_np, self.num_samples)
         elif self.modality == 'd':
-            input_np = self.create_sparse_depth(depth_np, self.num_samples)
+            input_np = self.create_sparse_depth_ORB(rgb_np, depth_np, self.num_samples)
+            # input_np = self.create_sparse_depth(depth_np, self.num_samples)
 
         input_tensor = to_tensor(input_np)
         while input_tensor.dim() < 3:
