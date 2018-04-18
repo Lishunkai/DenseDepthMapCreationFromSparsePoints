@@ -171,7 +171,7 @@ class NYUDataset(data.Dataset):
         gray = cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY)
         orb = cv2.ORB_create(num_samples) # 这里没有网格化
         kp = orb.detect(gray, None)
-        print("number of ORB KeyPoints:", len(kp))
+        # print("number of ORB KeyPoints:", len(kp))
 
         # print(len(kp)) # keypoint的个数
         # print(kp[0]) # 多少个角点，就有多少个下标
