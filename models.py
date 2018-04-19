@@ -4,17 +4,19 @@ import torch.nn as nn
 import torchvision.models
 import collections
 import math
+# 关于pytorch实现CNN的详细剖析，详见http://developer.51cto.com/art/201708/548220.htm
+# 关于深度学习中编码层的作用，详见https://zhuanlan.zhihu.com/p/27549418
 
 oheight, owidth = 228, 304
 
 def weights_init(m):
     # Initialize filters with Gaussian random weights
-    if isinstance(m, nn.Conv2d): 
+    if isinstance(m, nn.Conv2d):
         n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
         m.weight.data.normal_(0, math.sqrt(2. / n))
-        if m.bias is not None: 
+        if m.bias is not None:
             m.bias.data.zero_()
-    elif isinstance(m, nn.ConvTranspose2d):
+    elif isinstance(m, nn.ConvTranspose2d): # ConvTranspose2d是卷积的反操作，某种意义上可当做反卷积
         n = m.kernel_size[0] * m.kernel_size[1] * m.in_channels
         m.weight.data.normal_(0, math.sqrt(2. / n))
         if m.bias is not None: 
@@ -26,10 +28,15 @@ def weights_init(m):
 class Decoder(nn.Module):
     # Decoder is the base class for all decoders
 
+    # Module是pytorch提供的一个基类，每次我们搭建神经网络时都要继承这个类，继承这个类会使搭建网络的过程变得异常简单
+    # 详见https://blog.csdn.net/u012436149/article/details/78281553
+
     names = ['deconv{}'.format(i) for i in range(2,10)]
 
     def __init__(self):
         super(Decoder, self).__init__()
+        # super是继承父类(超类)的一种方法
+        # 详见https://www.cnblogs.com/HoMe-Lin/p/5745297.html
 
         self.layer1 = None
         self.layer2 = None
@@ -47,7 +54,7 @@ class DeConv(Decoder):
     def __init__(self, in_channels, kernel_size):
         assert kernel_size>=2, "kernel_size out of range: {}".format(kernel_size)
         super(DeConv, self).__init__()
-        
+
         def convt(in_channels):
             stride = 2
             padding = (kernel_size - 1) // 2
@@ -69,20 +76,20 @@ class DeConv(Decoder):
 
 
 def choose_decoder(decoder):
-    assert decoder[:6] == 'deconv'
-    assert len(decoder)==7 
+    assert decoder[:6] == 'deconv' # [:6]: 列表中的第1~6位元素    [1:]: 列表中第1位以后的所有元素(不含第1位)
+    assert len(decoder)==7
 
     num_channels = 512
     iheight, iwidth = 10, 8
-    kernel_size = int(decoder[6])
+    kernel_size = int(decoder[6]) # decoder的第7个元素。和c++一样，python数组的编号也是从0开始的
     return DeConv(num_channels, kernel_size)
 
 
 class ResNet(nn.Module):
     def __init__(self, layers, decoder, in_channels=3, out_channels=1, pretrained=True):
 
-        if layers not in [18, 34, 50, 101, 152]:
-            raise RuntimeError('Only 18, 34, 50, 101, and 152 layer model are defined for ResNet. Got {}'.format(layers))
+        if layers not in [18, 34, 50, 101, 152]: # 这是ResNet常用的层数
+            raise RuntimeError('Only 18, 34, 50, 101, and 152 layer models are defined for ResNet. Got {}'.format(layers))
         
         super(ResNet, self).__init__()
         pretrained_model = torchvision.models.__dict__['resnet{}'.format(layers)](pretrained=pretrained)
