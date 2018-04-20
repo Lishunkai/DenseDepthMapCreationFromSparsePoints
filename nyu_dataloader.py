@@ -118,7 +118,6 @@ def MatrixTocvMat(data):
     new_im = cv2.cvtColor(np.asarray(im),cv2.COLOR_RGB2BGR)  
     return new_im
 
-
 to_tensor = transforms.ToTensor()
 
 class NYUDataset(data.Dataset):
@@ -169,9 +168,13 @@ class NYUDataset(data.Dataset):
         # num_samples = int(prob * depth.size)
         rgb = MatrixTocvMat(rgb_np)
         gray = cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY)
-        orb = cv2.ORB_create(num_samples) # 这里没有网格化
+        orb = cv2.ORB_create(num_samples, 1.2, 4, 10, 0, 2, cv2.ORB_HARRIS_SCORE, 10) # 需要进行网格化
         kp = orb.detect(gray, None)
         # print("number of ORB KeyPoints:", len(kp))
+        # cv2.namedWindow("ORB")
+        # rgb_orb = cv2.drawKeypoints(rgb,kp,(255,0,0),-1)
+        # cv2.imshow("ORB",rgb_orb)
+        # cv2.waitKey(0)
 
         # print(len(kp)) # keypoint的个数
         # print(kp[0]) # 多少个角点，就有多少个下标
